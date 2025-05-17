@@ -232,6 +232,9 @@ kmWrite32(0x80549974, 0x38600001);
 //Skip ESRB page
 kmRegionWrite32(0x80604094, 0x4800001c, 'E');
 
+kmWrite32(0x800017D0, 0x64);
+kmWrite32(0x800017D4, 0x01);
+
 const char System::pulsarString[] = "/Pulsar";
 const char System::CommonAssets[] = "/CommonAssets.szs";
 const char System::breff[] = "/Effect/Pulsar.breff";
