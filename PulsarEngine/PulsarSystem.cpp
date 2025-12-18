@@ -57,6 +57,8 @@ void System::Init(const ConfigFile& conf) {
         }
     }
     strncpy(this->modFolderName, conf.header.modFolderName, IOS::ipcMaxFileName);
+    static char* pulMagic = reinterpret_cast<char*>(0x800017CC);
+    strcpy(pulMagic, "PUL2");
 
     //InitInstances
     CupsConfig::sInstance = new CupsConfig(conf.GetSection<CupsHolder>());
@@ -76,7 +78,7 @@ void System::Init(const ConfigFile& conf) {
     }
 
     //Track blocking 
-    u32 trackBlocking = this->info.GetTrackBlocking();
+    u32 trackBlocking = 32;
     this->netMgr.lastTracks = new PulsarId[trackBlocking];
     for(int i = 0; i < trackBlocking; ++i) this->netMgr.lastTracks[i] = PULSARID_NONE;
     const BMGHeader* const confBMG = &conf.GetSection<PulBMG>().header;
@@ -143,7 +145,7 @@ void System::UpdateContext() {
                 break;
             case(RKNet::ROOMTYPE_FROOM_HOST):
             case(RKNet::ROOMTYPE_FROOM_NONHOST):
-                isCT = mode != MODE_BATTLE && mode != MODE_PUBLIC_BATTLE && mode != MODE_PRIVATE_BATTLE;
+                //isCT = mode != MODE_BATTLE && mode != MODE_PUBLIC_BATTLE && mode != MODE_PRIVATE_BATTLE;
                 newContext = netMgr.hostContext;
                 isHAW = newContext & (1 << PULSAR_HAW);
                 isKO = newContext & (1 << PULSAR_MODE_KO);
@@ -154,7 +156,7 @@ void System::UpdateContext() {
                     isFeather &= newContext & (1 << PULSAR_FEATHER);
                 }
                 break;
-            default: isCT = false;
+            //default: isCT = false;
         }
     }
     else {
