@@ -1,25 +1,26 @@
-#include <MarioKartWii/Kart/KartManager.hpp>
-#include <InputDisplay/InputViewer.hpp>
-#include <MKVN.hpp>
-#include <MarioKartWii/Race/RaceInfo/RaceInfo.hpp>
+/**
+ * Direct port from mkw-sp Input Viewer
+ *
+ * Licensed under MIT. (See LICENSE_mkw-sp)
+ *
+ * Copyright 2021-2023 Pablo Stebler
 
-/*
-This code is ported from MKW-SP
-https://github.com/mkw-sp/mkw-sp
-
-Copyright 2021-2023 Pablo Stebler
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
-(the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
-publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
-subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ *
+ * https://github.com/mkw-sp/mkw-sp/blob/main/payload/game/ui/ctrl/CtrlRaceInputDisplay.cc
+ */
+
+#include <MarioKartWii/Kart/KartManager.hpp>
+#include <InputViewer.hpp>
+#include <Settings/Settings.hpp>
+#include <PulsarSystem.hpp>
+#include <MarioKartWii/Race/RaceInfo/RaceInfo.hpp>
+#include <MarioKartWii/RKNet/RKNetController.hpp>
 
 namespace Pulsar {
 namespace UI {
@@ -28,41 +29,47 @@ const s8 CtrlRaceInputViewer::DPAD_HOLD_FOR_N_FRAMES = 10;
 
 void CtrlRaceInputViewer::Init() {
     char name[32];
-    bool isBrakedriftToggled = true; // System::sInstance->IsContext(PULSAR_200);
+    const RacedataScenario& scenario = Racedata::sInstance->racesScenario;
+    const GameMode mode = scenario.settings.gamemode;
+    bool isBrakedriftToggled = true;
     RacedataScenario& raceScenario = Racedata::sInstance->racesScenario;
-    
+
     for (int i = 0; i < (int)DpadState_Count; ++i) {
         DpadState state = static_cast<DpadState>(i);
         const char* stateName = CtrlRaceInputViewer::DpadStateToName(state);
-        
+
         snprintf(name, 32, "Dpad%.*s", strlen(stateName), stateName);
         nw4r::lyt::Pane* pane = this->layout.GetPaneByName(name);
         this->SetPaneVisibility(name, state == DpadState_Off);
         this->m_dpadPanes[i] = pane;
-        
+
         this->HudSlotColorEnable(name, true);
     }
-    
+
     for (int i = 0; i < (int)AccelState_Count; ++i) {
         AccelState state = static_cast<AccelState>(i);
         const char* stateName = CtrlRaceInputViewer::AccelStateToName(state);
-        
+
         snprintf(name, 32, "Accel%.*s", strlen(stateName), stateName);
         nw4r::lyt::Pane* pane = this->layout.GetPaneByName(name);
         this->SetPaneVisibility(name, state == AccelState_Off);
+        if (isBrakedriftToggled) {
+            pane->trans.x += pane->scale.x * 15.0f;
+            pane->trans.y += pane->scale.z * 15.0f;
+        }
         this->m_accelPanes[i] = pane;
-        
+
         this->HudSlotColorEnable(name, true);
     }
-    
+
     for (int i = 0; i < (int)Trigger_Count; ++i) {
         Trigger trigger = static_cast<Trigger>(i);
         const char* triggerName = CtrlRaceInputViewer::TriggerToName(trigger);
-        
+
         for (int j = 0; j < (int)TriggerState_Count; ++j) {
             TriggerState state = static_cast<TriggerState>(j);
             const char* stateName = CtrlRaceInputViewer::TriggerStateToName(state);
-            
+
             snprintf(name, 32, "Trigger%.*s%.*s", strlen(triggerName), triggerName, strlen(stateName), stateName);
             nw4r::lyt::Pane* pane = this->layout.GetPaneByName(name);
             this->SetPaneVisibility(name, state == TriggerState_Off);
@@ -70,11 +77,11 @@ void CtrlRaceInputViewer::Init() {
                 this->SetPaneVisibility(name, false);
             }
             this->m_triggerPanes[i][j] = pane;
-            
+
             this->HudSlotColorEnable(name, true);
         }
     }
-    
+
     this->m_stickPane = this->layout.GetPaneByName("Stick");
     this->m_stickOrigin = this->m_stickPane->trans;
     this->m_playerId = this->GetPlayerId();
@@ -112,7 +119,7 @@ void CtrlRaceInputViewer::OnUpdate() {
                     dpadState = DpadState_Left;
                 }
             }
-            
+
             bool accel = input->buttonActions & 0x1;
             bool L = input->buttonActions & 0x4;
             bool R = (input->buttonActions & 0x8) || (input->buttonActions & 0x2);
@@ -123,18 +130,25 @@ void CtrlRaceInputViewer::OnUpdate() {
             setTrigger(Trigger_L, L ? TriggerState_Pressed : TriggerState_Off);
             setTrigger(Trigger_R, R ? TriggerState_Pressed : TriggerState_Off);
             setStick(stick);
+
+            const RacedataScenario& scenario = Racedata::sInstance->racesScenario;
+            const GameMode mode = scenario.settings.gamemode;
+            bool isBrakedriftToggled = true;
+            if (isBrakedriftToggled) {
+                bool BD = input->buttonActions & 0x10;
+                setTrigger(Trigger_BD, BD ? TriggerState_Pressed : TriggerState_Off);
+            }
         }
     }
 }
 
 u32 CtrlRaceInputViewer::Count() {
-    const u8 setting = Settings::Mgr::Get().GetSettingValue(Settings::SETTINGSTYPE_USER1, SETTINGUSER1_INPUTVIEWER);
-    if(setting == USER1SETTING_INPUTVIEWER_ENABLED) {
+    if (Settings::Mgr::Get().GetSettingValue(Settings::SETTINGSTYPE_USER1, SETTINGUSER1_INPUTVIEWER) == USER1SETTING_INPUTVIEWER_ENABLED) {
         const RacedataScenario& scenario = Racedata::sInstance->racesScenario;
         u32 localPlayerCount = scenario.localPlayerCount;
         const SectionId sectionId = SectionMgr::sInstance->curSection->sectionId;
-        if(sectionId >= SECTION_WATCH_GHOST_FROM_CHANNEL && sectionId <= SECTION_WATCH_GHOST_FROM_MENU) localPlayerCount += 1;
-        if(localPlayerCount == 0 && (scenario.settings.gametype & GAMETYPE_ONLINE_SPECTATOR)) localPlayerCount = 1;
+        if (sectionId >= SECTION_WATCH_GHOST_FROM_CHANNEL && sectionId <= SECTION_WATCH_GHOST_FROM_MENU) localPlayerCount += 1;
+        if (localPlayerCount == 0 && (scenario.settings.gametype & GAMETYPE_ONLINE_SPECTATOR)) localPlayerCount = 1;
         return localPlayerCount;
     }
     return 0;
@@ -142,7 +156,7 @@ u32 CtrlRaceInputViewer::Count() {
 
 void CtrlRaceInputViewer::Create(Page& page, u32 index, u32 count) {
     u8 variantId = (count == 3) ? 4 : count;
-    for(int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) {
         CtrlRaceInputViewer* inputViewer = new CtrlRaceInputViewer;
         page.AddControl(index + i, *inputViewer, 0);
 
@@ -159,9 +173,8 @@ static CustomCtrlBuilder INPUTVIEWER(CtrlRaceInputViewer::Count, CtrlRaceInputVi
 void CtrlRaceInputViewer::Load(const char* variant, u8 id) {
     this->hudSlotId = id;
     ControlLoader loader(this);
-    const char* groups[] = { nullptr, nullptr };
-    if(U8_INPUT == 0x00) loader.Load(UI::raceFolder, "PULInputViewerNunchuck", variant, groups);
-    if(U8_INPUT != 0x00) loader.Load(UI::raceFolder, "PULInputViewer", variant, groups);
+    const char* groups[] = {nullptr, nullptr};
+    loader.Load(UI::raceFolder, "PULInputViewer", variant, groups);
 }
 
 void CtrlRaceInputViewer::setDpad(DpadState state) {
@@ -209,12 +222,12 @@ void CtrlRaceInputViewer::setStick(Vec2 state) {
     // Map range [-1, 1] -> [-width * 5 / 19, width * 5 / 19]
     float scale = 5.0f / 19.0f;
     m_stickPane->trans.x =
-            m_stickOrigin.x + scale * state.x * m_stickPane->scale.x * m_stickPane->size.x;
+        m_stickOrigin.x + scale * state.x * m_stickPane->scale.x * m_stickPane->size.x;
     m_stickPane->trans.y =
-            m_stickOrigin.y + scale * state.z * m_stickPane->scale.z * m_stickPane->size.z;
+        m_stickOrigin.y + scale * state.z * m_stickPane->scale.z * m_stickPane->size.z;
 
     m_stickState = state;
 }
 
-} // namespace UI
-} // namespace Pulsar
+}  // namespace UI
+}  // namespace Pulsar
