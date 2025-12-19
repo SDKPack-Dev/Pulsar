@@ -145,7 +145,7 @@ void System::UpdateContext() {
                 break;
             case(RKNet::ROOMTYPE_FROOM_HOST):
             case(RKNet::ROOMTYPE_FROOM_NONHOST):
-                //isCT = mode != MODE_BATTLE && mode != MODE_PUBLIC_BATTLE && mode != MODE_PRIVATE_BATTLE;
+                isCT = mode != MODE_BATTLE && mode != MODE_PUBLIC_BATTLE && mode != MODE_PRIVATE_BATTLE;
                 newContext = netMgr.hostContext;
                 isHAW = newContext & (1 << PULSAR_HAW);
                 isKO = newContext & (1 << PULSAR_MODE_KO);
@@ -156,7 +156,7 @@ void System::UpdateContext() {
                     isFeather &= newContext & (1 << PULSAR_FEATHER);
                 }
                 break;
-            //default: isCT = false;
+            default: isCT = false;
         }
     }
     else {
