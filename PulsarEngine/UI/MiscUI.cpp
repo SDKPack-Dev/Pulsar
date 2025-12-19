@@ -99,13 +99,16 @@ SectionParams& FavouriteCombo(SectionParams& params) {
             if (charWeight == -1 || charWeight != kartWeight) {
                 switch (kartWeight) {
                 case 0:
-                    favChar = BABY_DAISY;
+                    favChar = BABY_LUIGI;
+                    favKart = BULLET_BIKE;
                     break;
                 case 1:
-                    favChar = DAISY;
+                    favChar = YOSHI;
+                    favKart = MACH_BIKE;
                     break;
                 case 2:
-                    favChar = FUNKY_KONG;
+                    favChar = KING_BOO;
+                    favKart = SPEAR;
                 }
             }
             params.characters[0] = favChar;
