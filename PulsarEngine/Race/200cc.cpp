@@ -20,7 +20,7 @@ static void CannonExitSpeed() {
 kmCall(0x805850c8, CannonExitSpeed);
 
 void EnableBrakeDrifting(Input::ControllerHolder& controllerHolder) {
-    if(System::sInstance->IsContext(PULSAR_200)) {
+    // if(System::sInstance->IsContext(PULSAR_200)) {
         const ControllerType controllerType = controllerHolder.curController->GetType();
         const u16 inputs = controllerHolder.inputStates[0].buttonRaw;
         u16 inputsMask = 0x700;
@@ -37,7 +37,7 @@ void EnableBrakeDrifting(Input::ControllerHolder& controllerHolder) {
                 break;
         }
         if((inputs & inputsMask) == inputsMask) controllerHolder.inputStates[0].buttonActions |= 0x10;
-    }
+    // }
 }
 
 static void CalcBrakeDrifting() {
@@ -60,14 +60,14 @@ kmCall(0x80521828, FixGhostBrakeDrifting);
 
 
 bool IsBrakeDrifting(const Kart::Status& status) {
-    if(System::sInstance->IsContext(PULSAR_200)) {
+    // if(System::sInstance->IsContext(PULSAR_200)) {
         u32 bitfield0 = status.bitfield0;
         const Input::ControllerHolder& controllerHolder = status.link->GetControllerHolder();
         if((bitfield0 & 0x40000) != 0 && (bitfield0 & 0x1F) == 0xF && (bitfield0 & 0x80100000) == 0
             && (controllerHolder.inputStates[0].buttonActions & 0x10) != 0x0) {
             return true;
         }
-    }
+    // }
     return false;
 }
 
@@ -103,10 +103,10 @@ kmCall(0x806faff8, BrakeDriftingSoundWrapper);
 kmWrite32(0x80698f88, 0x60000000);
 static int BrakeEffectBikes(Effects::Player& effects) {
     const Kart::Player* kartPlayer = effects.kartPlayer;
-    if(System::sInstance->IsContext(PULSAR_200)) {
+    // if(System::sInstance->IsContext(PULSAR_200)) {
         if(IsBrakeDrifting(*kartPlayer->pointers.kartStatus)) effects.CreateAndUpdateEffectsByIdxVelocity(effects.bikeDriftEffects, 25, 26, 1);
         else effects.FollowFadeEffectsByIdxVelocity(effects.bikeDriftEffects, 25, 26, 1);
-    }
+    // }
     return kartPlayer->GetDriftState();
 }
 kmCall(0x80698f8c, BrakeEffectBikes);
@@ -114,10 +114,10 @@ kmCall(0x80698f8c, BrakeEffectBikes);
 kmWrite32(0x80698048, 0x60000000);
 static int BrakeEffectKarts(Effects::Player& effects) {
     Kart::Player* kartPlayer = effects.kartPlayer;
-    if(System::sInstance->IsContext(PULSAR_200)) {
+    // if(System::sInstance->IsContext(PULSAR_200)) {
         if(IsBrakeDrifting(*kartPlayer->pointers.kartStatus)) effects.CreateAndUpdateEffectsByIdxVelocity(effects.kartDriftEffects, 34, 36, 1);
         else effects.FollowFadeEffectsByIdxVelocity(effects.kartDriftEffects, 34, 36, 1);
-    }
+    // }
     return kartPlayer->GetDriftState();
 }
 kmCall(0x8069804c, BrakeEffectKarts);
