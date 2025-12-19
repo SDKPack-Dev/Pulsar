@@ -87,7 +87,12 @@ RaceFrameHook BattleGlitch(BattleGlitchEnable);
 
 kmWrite32(0x8085C914, 0x38000000); //times at the end of races in VS
 static void DisplayTimesInsteadOfNames(CtrlRaceResult& result, u8 id) {
-    result.FillName(id);
+    const u8 setting = Settings::Mgr::Get().GetUserSettingValue(Settings::SETTINGSTYPE_USER1, SETTINGUSER1_INPUTVIEWER);
+    if (setting == USER1SETTING_LEADERBOARDTYPE_TIMES) {
+        result.FillFinishTime(id);
+    } else {
+        result.FillName(id);
+    }
 }
 kmCall(0x8085d460, DisplayTimesInsteadOfNames); //for WWs
 

@@ -128,7 +128,8 @@ void CtrlRaceInputViewer::OnUpdate() {
 }
 
 u32 CtrlRaceInputViewer::Count() {
-    if(U8_INPUT_VIEW == 0x01) {
+    const u8 setting = Settings::Mgr::Get().GetUserSettingValue(Settings::SETTINGSTYPE_USER1, SETTINGUSER1_INPUTVIEWER);
+    if(setting == USER1SETTING_INPUTVIEWER_ENABLED) {
         const RacedataScenario& scenario = Racedata::sInstance->racesScenario;
         u32 localPlayerCount = scenario.localPlayerCount;
         const SectionId sectionId = SectionMgr::sInstance->curSection->sectionId;

@@ -11,7 +11,7 @@ namespace Settings {
 class Params {
 public:
     static const int pulsarPageCount = 5;
-    static const int userPageCount = 0;
+    static const int userPageCount = 1;
     static const int pageCount = pulsarPageCount + userPageCount;
 
     static const int maxRadioCount = 6; //per page, due to space
@@ -36,7 +36,7 @@ enum Type {
 
 //If you want to add settings to your packs, they go in this enum, and GetUserSettingValue should be used to obtain the value of a given setting
 enum UserType {
-
+    SETTINGSTYPE_USER1
 };
 
 }//namespace Settings
@@ -82,6 +82,11 @@ enum KOSettings {
     SETTINGKO_KOPERRACE = 0 + 6,
     SETTINGKO_RACESPERKO = 1 + 6,
 
+};
+
+enum User1Settings {
+    SETTINGUSER1_INPUTVIEWER = 0,
+    SETTINGUSER1_LEADERBOARD = 1,
 };
 
 //MENU SETTINGS
@@ -218,6 +223,18 @@ enum KOSettingRacesPerKO {
     KOSETTING_RACESPERKO_4
 };
 //KOSETTINGS
+
+//USER 1
+enum User1SettingInputViewer {
+    USER1SETTING_INPUTVIEWER_DISABLED,
+    USER1SETTING_INPUTVIEWER_ENABLED
+};
+
+enum User1SettingLeaderboardType {
+    USER1SETTING_LEADERBOARDTYPE_NAMES,
+    USER1SETTING_LEADERBOARDTYPE_TIMES
+};
+//USER 1
 
 }//namespace Pulsar
 
