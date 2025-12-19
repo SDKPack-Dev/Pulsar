@@ -32,11 +32,12 @@ enum Type {
     SETTINGSTYPE_HOST,
     SETTINGSTYPE_OTT,
     SETTINGSTYPE_KO,
+    SETTINGSTYPE_USER1
 };
 
 //If you want to add settings to your packs, they go in this enum, and GetUserSettingValue should be used to obtain the value of a given setting
 enum UserType {
-    SETTINGSTYPE_USER1
+    
 };
 
 }//namespace Settings
